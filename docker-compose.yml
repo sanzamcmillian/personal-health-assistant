@@ -1,0 +1,44 @@
+services:
+
+  api:
+    build:
+      context: ./backend
+
+    container_name: personal-health-assistant-api
+
+    ports:
+      - "8000:8000"
+
+    env_file:
+      - ./backend/.env
+
+    volumes:
+      - ./backend:/app
+
+    depends_on:
+      - postgres
+
+    restart: unless-stopped
+
+  postgres:
+
+    image: pgvector/pgvector:pg16
+
+    container_name: personal-health-assistant
+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: personal_health_assistant
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    restart: unless-stopped
+
+volumes:
+
+  postgres_data:
