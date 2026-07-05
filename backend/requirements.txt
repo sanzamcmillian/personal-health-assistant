@@ -1,0 +1,66 @@
+# ==========================
+# FastAPI
+# ==========================
+fastapi
+uvicorn[standard]
+python-multipart
+
+# ==========================
+# Database
+# ==========================
+sqlalchemy
+alembic
+psycopg[binary]
+pgvector
+
+# ==========================
+# Configuration
+# ==========================
+pydantic
+pydantic-settings
+python-dotenv
+
+# ==========================
+# Google AI
+# ==========================
+google-genai
+
+# ==========================
+# PDF Processing
+# ==========================
+PyMuPDF
+
+# ==========================
+# Storage
+# ==========================
+google-cloud-storage
+
+# ==========================
+# Utilities
+# ==========================
+numpy
+orjson
+httpx
+
+# ==========================
+# Logging
+# ==========================
+structlog
+
+# ==========================
+# Testing
+# ==========================
+pytest
+pytest-asyncio
+
+# ==========================
+# Linting
+# ==========================
+ruff
+black
+
+# ==========================
+# Security
+# ==========================
+passlib[bcrypt]
+python-jose[cryptography]
