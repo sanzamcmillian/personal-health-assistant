@@ -34,9 +34,6 @@ htmlcov/
 # Local uploads
 uploads/
 
-# Alembic
-alembic.ini
-
 # Build
 dist/
 build/

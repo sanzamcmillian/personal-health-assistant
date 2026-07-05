@@ -16,8 +16,7 @@ This is a backend-only POC — there is no frontend yet.
 
 ## Running locally with Docker
 
-1. Copy `backend/.env` and fill in `GEMINI_API_KEY` (get one from
-   [Google AI Studio](https://aistudio.google.com/apikey)).
+1. Copy `backend/.env.example` to `backend/.env` and fill in `GEMINI_API_KEY` ...
 2. From the repo root:
 
    ```bash
@@ -27,7 +26,7 @@ This is a backend-only POC — there is no frontend yet.
 3. Run migrations (first time only, in another terminal):
 
    ```bash
-   docker compose exec backend alembic upgrade head
+   docker compose exec api alembic upgrade head
    ```
 
 4. The API is now live at `http://localhost:8000`. Interactive docs at
