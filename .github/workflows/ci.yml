@@ -15,7 +15,7 @@ concurrency:
 jobs:
   lint-and-test:
     name: Backend Lint & Unit Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
 
     steps:
       - name: Checkout Repository
