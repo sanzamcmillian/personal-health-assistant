@@ -1,71 +1,61 @@
 # Personal Health Assistant
 
-A minimal RAG (retrieval-augmented generation) backend: upload your own PDF
-health documents, they get chunked and embedded, and you can then ask
-questions answered only from the content of those documents, via Gemini.
+A privacy-first, zero-retention symptom assessment and health triage assistant. Designed for users needing quick clinical guidance at home or when away from a healthcare provider. Users complete an ultra-fast onboarding (Name, Age, Sex), describe their symptoms, answer conversational follow-up questions (medications, allergies, pregnancy status if female), and can optionally attach medical documents (PDF) for direct in-context analysis.
 
-This is a backend-only POC — there is no frontend yet.
+If critical or life-threatening symptoms are detected, the system immediately presents an emergency alert with a one-touch call button (`tel:911`), followed by nearby 24/7 emergency facilities using the free OpenStreetMap Overpass API.
 
-## Stack
+---
 
-- FastAPI
-- PostgreSQL + [pgvector](https://github.com/pgvector/pgvector) for embeddings
-- SQLAlchemy 2.0 + Alembic
-- Google Gemini (`google-genai`) for embeddings + generation
-- PyMuPDF for PDF text extraction
+## Key Architectural Principles
 
-## Running locally with Docker
+- **Zero-Retention Privacy**: No permanent database. Patient profiles, conversations, and document text live strictly in volatile memory with rolling 30-minute TTLs and are purged upon session end or inactivity.
+- **Deterministic-First Safety**: A deterministic red-flag rule engine executes on *every user turn* before any LLM call, guaranteeing zero-latency emergency escalation independent of model availability or rate limits.
+- **Post-LLM Escalation Floor**: The LLM outputs structured JSON. A post-LLM validator enforces an escalation floor (triage severity can be raised, never lowered) and strictly rejects medication-stopping directives or dosing adjustments.
+- **In-Memory Direct Context**: PDFs are parsed in-memory from byte streams (zero `/tmp` disk writes) and injected directly into Gemini 2.5 Flash's 1M context window. This preserves complete lab tables, units, and reference ranges without chunking artifacts.
+- **Free External Providers**: Uses Google Gemini (Free tier) and OpenStreetMap Overpass API (Free/Open).
 
-1. Copy `backend/.env.example` to `backend/.env` and fill in `GEMINI_API_KEY` ...
-2. From the repo root:
+---
 
+## Tech Stack
+
+- **API Framework**: FastAPI (Python 3.12), Pydantic v2
+- **LLM**: Google Gemini 2.5 Flash (`google-genai` SDK) with structured JSON output
+- **PDF Extraction**: PyMuPDF (`fitz`) from in-memory byte streams
+- **Emergency Geolocation**: OpenStreetMap Overpass API (Free 24/7 ER/hospital locator)
+- **Containerization**: Docker & Docker Compose (single stateless API container)
+
+---
+
+## Running Locally with Docker
+
+1. Copy `.env.example` to `backend/.env` and set your `GEMINI_API_KEY`:
+   ```bash
+   cp backend/.env.example backend/.env
+   ```
+
+2. Start the service:
    ```bash
    docker compose up --build
    ```
 
-3. Run migrations (first time only, in another terminal):
+3. The API will be live at `http://localhost:8000`. Interactive docs are available at `http://localhost:8000/docs`.
 
-   ```bash
-   docker compose exec api alembic upgrade head
-   ```
+---
 
-4. The API is now live at `http://localhost:8000`. Interactive docs at
-   `http://localhost:8000/docs`.
+## API Endpoints (`/api/v1`)
 
-## API
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/v1/session/start` | Rapid guest onboarding (Name, Age, Sex). Sets `HttpOnly` session cookie. |
+| `POST` | `/api/v1/session/end` | Explicitly wipes session state from memory and clears session cookie. |
+| `POST` | `/api/v1/chat` | Evaluates symptoms, runs red-flag checks, and returns structured triage. |
+| `POST` | `/api/v1/documents/upload` | In-memory upload of optional medical PDF (max 10MB, max 10 pages). |
+| `GET` | `/api/v1/emergency/facilities` | Asynchronously locates nearby 24/7 ERs via OpenStreetMap (`lat`, `lon`). |
+| `GET` | `/api/v1/health` | Service health status. |
 
-- `GET /api/v1/health` — health check
-- `POST /api/v1/documents/upload` — upload a PDF (multipart `file` field)
-- `POST /api/v1/chat` — `{"question": "..."}`, answered using your uploaded
-  documents as context, with `sources` pointing back to the originating
-  document/chunk
+---
 
-## Running without Docker
+## Documentation
 
-```bash
-cd backend
-pip install -r requirements.txt
-export DATABASE_URL=postgresql://postgres:postgres@localhost:5432/personal_health_assistant
-export GEMINI_API_KEY=your-key-here
-alembic upgrade head
-uvicorn app.main:app --reload
-```
-
-## Notes / current limitations (POC scope)
-
-- No auth — anyone with API access can upload/query documents.
-- No chat session persistence yet (`ChatSession`/`Message` models exist but
-  aren't wired into the chat endpoint) — each question is answered
-  independently, with no conversation history.
-- Local disk storage only (`backend/uploads/`); Google Cloud Storage is
-  configured in `.env` but not yet implemented in `StorageService`.
-- Chunking is fixed-size (800 chars, 150 overlap) per PDF page, not
-  semantic/structure-aware.
-
-
-## Future integrations
-
-- Deploy on GCP
-- implement github workflows
-- add some frontend
-- terraform
+- [User Stories Specification](docs/user_stories.md)
+- [System Architecture Specification](docs/architecture.md)

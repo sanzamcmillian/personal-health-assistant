@@ -1,36 +1,48 @@
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Cookie, HTTPException, Request, Response, status
+from app.core.config import settings
+from app.core.rate_limit import rate_limiter
+from app.schemas.chat import ChatRequest, TriageResponse
+from app.services.session_service import session_service
+from app.services.triage_service import triage_service
 
-from app.db.init_db import get_db
-from app.repositories.chunk_repository import ChunkRepository
-from app.schemas.chat import ChatRequest, ChatResponse
-from app.services.embedding_service import EmbeddingService
-from app.services.gemini_service import GeminiService
-from app.services.rag_service import RagService
-from app.services.retrieval_service import RetrievalService
-
-router = APIRouter(
-    prefix="/chat",
-    tags=["Chat"],
-)
+router = APIRouter(prefix="/chat", tags=["Chat & Triage"])
 
 
-def get_rag_service(
-    db: Session = Depends(get_db),
-) -> RagService:
-    gemini = GeminiService()
-    embedding = EmbeddingService(gemini)
-    chunks = ChunkRepository(db)
-    retrieval = RetrievalService(embedding, chunks)
-
-    return RagService(retrieval, gemini)
-
-
-@router.post("", response_model=ChatResponse)
+@router.post("", response_model=TriageResponse)
 async def chat(
-    request: ChatRequest,
-    rag: RagService = Depends(get_rag_service),
-) -> ChatResponse:
-    result = rag.answer(request.question)
+    request: Request,
+    payload: ChatRequest,
+    response: Response,
+    session_token: str | None = Cookie(default=None, alias=settings.COOKIE_NAME),
+) -> TriageResponse:
+    rate_limiter.check(request)
 
-    return ChatResponse(**result)
+    session = await session_service.get_session(session_token)
+
+    # In-flight conflict check: prevent concurrent requests on the same session
+    if session.lock.locked():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "REQUEST_ALREADY_IN_FLIGHT", "detail": "A prior message is still being analyzed."},
+        )
+
+    async with session.lock:
+        if session.terminated:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail={"code": "SESSION_TERMINATED", "detail": "Session was terminated."},
+            )
+
+        triage_result = await triage_service.process_message(payload.message, session)
+
+    # Re-issue refreshed cookie matching rolling 30-minute TTL
+    response.set_cookie(
+        key=settings.COOKIE_NAME,
+        value=session.session_id,
+        httponly=True,
+        samesite="strict",
+        secure=settings.COOKIE_SECURE,
+        max_age=settings.SESSION_TTL_MINUTES * 60,
+    )
+
+    return triage_result

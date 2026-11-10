@@ -33,6 +33,7 @@ htmlcov/
 
 # Local uploads
 uploads/
+skills/
 
 # Build
 dist/

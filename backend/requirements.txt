@@ -1,66 +1,36 @@
 # ==========================
-# FastAPI
+# FastAPI & Server
 # ==========================
 fastapi
 uvicorn[standard]
 python-multipart
 
 # ==========================
-# Database
-# ==========================
-sqlalchemy
-alembic
-psycopg[binary]
-pgvector
-
-# ==========================
-# Configuration
+# Configuration & Validation
 # ==========================
 pydantic
 pydantic-settings
 python-dotenv
 
 # ==========================
-# Google AI
+# Google AI (Gemini)
 # ==========================
 google-genai
 
 # ==========================
-# PDF Processing
+# PDF Processing (In-Memory)
 # ==========================
 PyMuPDF
 
 # ==========================
-# Storage
+# HTTP Client (OpenStreetMap)
 # ==========================
-google-cloud-storage
-
-# ==========================
-# Utilities
-# ==========================
-numpy
-orjson
 httpx
 
 # ==========================
-# Logging
-# ==========================
-structlog
-
-# ==========================
-# Testing
+# Testing & Code Quality
 # ==========================
 pytest
 pytest-asyncio
-
-# ==========================
-# Linting
-# ==========================
 ruff
 black
-
-# ==========================
-# Security
-# ==========================
-passlib[bcrypt]
-python-jose[cryptography]

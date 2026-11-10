@@ -1,13 +1,14 @@
-from datetime import datetime
-
 from pydantic import BaseModel
 
 
-class DocumentResponse(BaseModel):
-    id: str
+class DocumentUploadResponse(BaseModel):
+    document_id: str
     filename: str
-    original_filename: str
-    mime_type: str
-    created_at: datetime
+    page_count: int
+    total_characters: int
+    message: str
 
-    model_config = {"from_attributes": True}
+
+class DocumentDeleteResponse(BaseModel):
+    document_id: str
+    deleted: bool
