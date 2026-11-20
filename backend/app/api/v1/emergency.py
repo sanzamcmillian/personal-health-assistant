@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Request
+
 from app.core.rate_limit import rate_limiter
 from app.schemas.emergency import EmergencyFacilitiesResponse, EmergencyFacilityQuery
 from app.services.emergency_service import emergency_service

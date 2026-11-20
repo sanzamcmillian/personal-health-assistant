@@ -100,7 +100,11 @@ GEMINI_RESPONSE_SCHEMA = {
                     "items": {"type": "string"},
                 },
             },
-            "required": ["medications_mentioned", "allergies_mentioned", "chronic_conditions_mentioned"],
+            "required": [
+                "medications_mentioned",
+                "allergies_mentioned",
+                "chronic_conditions_mentioned",
+            ],
         },
         "citations": {
             "type": "array",

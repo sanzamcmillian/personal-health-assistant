@@ -1,7 +1,7 @@
 import pytest
-from pydantic import ValidationError
 from app.core.constants import resolve_emergency_numbers
 from app.schemas.emergency import EmergencyFacilityQuery
+from pydantic import ValidationError
 
 
 def test_emergency_numbers_resolution():

@@ -1,6 +1,8 @@
 from datetime import datetime
+
 from pydantic import BaseModel, Field
-from app.core.constants import BiologicalSex, DISCLAIMER_VERSION, TriageLevel
+
+from app.core.constants import DISCLAIMER_VERSION, BiologicalSex, TriageLevel
 
 
 class StartSessionRequest(BaseModel):

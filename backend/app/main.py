@@ -1,7 +1,8 @@
 import asyncio
-from contextlib import asynccontextmanager
 import glob
 import os
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,7 +15,7 @@ from app.api.v1.health import router as health_router
 from app.api.v1.session import router as session_router
 from app.core.config import settings
 from app.core.constants import API_PREFIX, APP_VERSION
-from app.core.logging import configure_logging, ZeroPHILoggingMiddleware
+from app.core.logging import ZeroPHILoggingMiddleware, configure_logging, logger
 from app.services.session_service import session_service
 
 configure_logging()
@@ -26,8 +27,8 @@ async def periodic_session_cleanup():
         await asyncio.sleep(300)
         try:
             await session_service.cleanup_expired_sessions()
-        except Exception:
-            pass
+        except Exception:  # noqa: BLE001
+            logger.exception("Failed to clean up expired sessions")
 
 
 @asynccontextmanager

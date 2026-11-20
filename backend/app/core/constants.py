@@ -6,9 +6,9 @@ DISCLAIMER_VERSION = "v1.0"
 
 
 class TriageLevel(str, Enum):
-    GREEN = "GREEN"      # Self-Care / Monitor
-    YELLOW = "YELLOW"    # Routine / Urgent Care within 24-48h
-    RED = "RED"          # Immediate Emergency
+    GREEN = "GREEN"  # Self-Care / Monitor
+    YELLOW = "YELLOW"  # Routine / Urgent Care within 24-48h
+    RED = "RED"  # Immediate Emergency
 
 
 class TriageDisposition(str, Enum):

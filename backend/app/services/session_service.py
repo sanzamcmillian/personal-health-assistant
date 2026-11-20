@@ -1,7 +1,9 @@
 import asyncio
-from datetime import datetime, timezone, timedelta
 import secrets
+from datetime import UTC, datetime
+
 from fastapi import HTTPException, status
+
 from app.core.config import settings
 from app.models.session import EphemeralPatientProfile, EphemeralSession
 
@@ -16,7 +18,9 @@ class SessionService:
         self._sessions: dict[str, EphemeralSession] = {}
         self._global_lock = asyncio.Lock()
 
-    async def create_session(self, profile: EphemeralPatientProfile) -> EphemeralSession:
+    async def create_session(
+        self, profile: EphemeralPatientProfile
+    ) -> EphemeralSession:
         async with self._global_lock:
             # Check global capacity
             if len(self._sessions) >= settings.MAX_ACTIVE_SESSIONS:
@@ -24,7 +28,10 @@ class SessionService:
                 if len(self._sessions) >= settings.MAX_ACTIVE_SESSIONS:
                     raise HTTPException(
                         status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                        detail={"code": "CAPACITY_EXCEEDED", "detail": "Demo capacity reached. Please try again shortly."},
+                        detail={
+                            "code": "CAPACITY_EXCEEDED",
+                            "detail": "Demo capacity reached. Please try again shortly.",
+                        },
                     )
 
             session_id = secrets.token_urlsafe(32)
@@ -39,7 +46,10 @@ class SessionService:
         if not session_id or session_id not in self._sessions:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail={"code": "SESSION_EXPIRED", "detail": "Active session required. Please start a session first."},
+                detail={
+                    "code": "SESSION_EXPIRED",
+                    "detail": "Active session required. Please start a session first.",
+                },
             )
 
         session = self._sessions[session_id]
@@ -47,15 +57,21 @@ class SessionService:
         if session.terminated:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail={"code": "SESSION_TERMINATED", "detail": "Session has been terminated."},
+                detail={
+                    "code": "SESSION_TERMINATED",
+                    "detail": "Session has been terminated.",
+                },
             )
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if now > session.expires_at:
             await self.destroy_session(session_id)
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail={"code": "SESSION_EXPIRED", "detail": "Session expired due to inactivity. Please start a new session."},
+                detail={
+                    "code": "SESSION_EXPIRED",
+                    "detail": "Session expired due to inactivity. Please start a new session.",
+                },
             )
 
         session.refresh_ttl()
@@ -66,17 +82,23 @@ class SessionService:
         if not session_id or session_id not in self._sessions:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail={"code": "SESSION_EXPIRED", "detail": "Session does not exist or has expired."},
+                detail={
+                    "code": "SESSION_EXPIRED",
+                    "detail": "Session does not exist or has expired.",
+                },
             )
 
         session = self._sessions[session_id]
         if session.terminated:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail={"code": "SESSION_TERMINATED", "detail": "Session has been terminated."},
+                detail={
+                    "code": "SESSION_TERMINATED",
+                    "detail": "Session has been terminated.",
+                },
             )
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if now > session.expires_at:
             await self.destroy_session(session_id)
             raise HTTPException(
@@ -123,7 +145,7 @@ class SessionService:
             return self._sweep_expired_unlocked()
 
     def _sweep_expired_unlocked(self) -> int:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         expired_ids = [
             sid
             for sid, s in self._sessions.items()

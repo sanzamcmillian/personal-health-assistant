@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Cookie, Request, Response, status
+
 from app.core.config import settings
 from app.core.constants import resolve_emergency_numbers
 from app.core.rate_limit import rate_limiter
@@ -15,7 +16,9 @@ from app.services.session_service import session_service
 router = APIRouter(prefix="/session", tags=["Session"])
 
 
-@router.post("/start", response_model=SessionResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/start", response_model=SessionResponse, status_code=status.HTTP_201_CREATED
+)
 async def start_session(
     request: Request,
     payload: StartSessionRequest,

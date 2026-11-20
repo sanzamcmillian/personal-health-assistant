@@ -2,8 +2,10 @@ import asyncio
 import io
 import re
 import secrets
+
 import fitz  # PyMuPDF
 from fastapi import HTTPException, UploadFile, status
+
 from app.core.config import settings
 from app.models.session import EphemeralDocument
 
@@ -32,7 +34,10 @@ class PDFService:
         if not file.filename or not file.filename.lower().endswith(".pdf"):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"code": "INVALID_DOCUMENT_FORMAT", "detail": "Only PDF files are supported."},
+                detail={
+                    "code": "INVALID_DOCUMENT_FORMAT",
+                    "detail": "Only PDF files are supported.",
+                },
             )
 
         # 1. Stream file bytes with strict size enforcement (chunk by chunk)
@@ -60,7 +65,10 @@ class PDFService:
         if not file_bytes.startswith(b"%PDF-"):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"code": "INVALID_DOCUMENT_FORMAT", "detail": "Invalid file format. Must be a valid PDF document."},
+                detail={
+                    "code": "INVALID_DOCUMENT_FORMAT",
+                    "detail": "Invalid file format. Must be a valid PDF document.",
+                },
             )
 
         # 3. Threadpool extraction with concurrency semaphore & timeout
@@ -70,10 +78,13 @@ class PDFService:
                     asyncio.to_thread(cls._extract_pdf_in_thread, file_bytes),
                     timeout=_EXTRACTION_TIMEOUT_SECONDS,
                 )
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 raise HTTPException(
                     status_code=status.HTTP_504_GATEWAY_TIMEOUT,
-                    detail={"code": "UPSTREAM_TIMEOUT", "detail": "Document text extraction timed out."},
+                    detail={
+                        "code": "UPSTREAM_TIMEOUT",
+                        "detail": "Document text extraction timed out.",
+                    },
                 )
 
         page_count, total_chars, text_by_page = doc_data
@@ -103,18 +114,24 @@ class PDFService:
     def _extract_pdf_in_thread(file_bytes: bytes) -> tuple[int, int, dict[int, str]]:
         try:
             doc = fitz.open(stream=file_bytes, filetype="pdf")
-        except Exception:
+        except (fitz.FileDataError, RuntimeError, ValueError) as exc:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"code": "INVALID_DOCUMENT_FORMAT", "detail": "Could not open PDF. The file may be corrupt."},
-            )
+                detail={
+                    "code": "INVALID_DOCUMENT_FORMAT",
+                    "detail": "Could not open PDF. The file may be corrupt.",
+                },
+            ) from exc
 
         # Check encryption
         if doc.is_encrypted:
             doc.close()
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"code": "INVALID_DOCUMENT_FORMAT", "detail": "Password-protected or encrypted PDFs are not supported."},
+                detail={
+                    "code": "INVALID_DOCUMENT_FORMAT",
+                    "detail": "Password-protected or encrypted PDFs are not supported.",
+                },
             )
 
         # Check page count before iterating through text

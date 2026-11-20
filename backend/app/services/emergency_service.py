@@ -1,7 +1,10 @@
 import math
 import time
+
 import httpx
+
 from app.core.constants import resolve_emergency_numbers
+from app.core.logging import logger
 from app.schemas.emergency import EmergencyFacilitiesResponse, FacilityItem
 
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
@@ -76,22 +79,39 @@ class EmergencyFacilityService:
 
                     for el in elements:
                         tags = el.get("tags", {})
-                        name = tags.get("name") or tags.get("operator") or "Emergency Medical Facility"
-                        
+                        name = (
+                            tags.get("name")
+                            or tags.get("operator")
+                            or "Emergency Medical Facility"
+                        )
+
                         lat = el.get("lat") or el.get("center", {}).get("lat")
                         lon = el.get("lon") or el.get("center", {}).get("lon")
-                        
+
                         if lat and lon:
-                            distance = cls._haversine(rounded_lat, rounded_lon, lat, lon)
+                            distance = cls._haversine(
+                                rounded_lat, rounded_lon, lat, lon
+                            )
                             phone = tags.get("phone") or tags.get("contact:phone")
                             street = tags.get("addr:street")
                             city = tags.get("addr:city")
-                            address = f"{street}, {city}" if street and city else street or city
+                            address = (
+                                f"{street}, {city}"
+                                if street and city
+                                else street or city
+                            )
                             hours = tags.get("opening_hours")
-                            has_ed = tags.get("emergency") == "yes" or "emergency_ward_entrance" in tags.values()
-                            f_type = "hospital" if tags.get("amenity") == "hospital" else "urgent_care"
+                            has_ed = (
+                                tags.get("emergency") == "yes"
+                                or "emergency_ward_entrance" in tags.values()
+                            )
+                            f_type = (
+                                "hospital"
+                                if tags.get("amenity") == "hospital"
+                                else "urgent_care"
+                            )
 
-                            maps_url = f"https://www.google.com/maps/search/?api=1&query={round(lat,2)},{round(lon,2)}"
+                            maps_url = f"https://www.google.com/maps/search/?api=1&query={round(lat, 2)},{round(lon, 2)}"
 
                             facilities.append(
                                 FacilityItem(
@@ -118,7 +138,8 @@ class EmergencyFacilityService:
                 facilities=top_facilities,
                 cached=False,
             )
-        except Exception:
+        except (httpx.HTTPError, ValueError) as exc:
+            logger.warning("Overpass API request failed: %s", exc)
             return EmergencyFacilitiesResponse(
                 emergency_numbers=emergency_numbers,
                 facilities=[],
@@ -132,7 +153,9 @@ class EmergencyFacilityService:
         dlon = math.radians(lon2 - lon1)
         a = (
             math.sin(dlat / 2) ** 2
-            + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2) ** 2
+            + math.cos(math.radians(lat1))
+            * math.cos(math.radians(lat2))
+            * math.sin(dlon / 2) ** 2
         )
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
         return r * c

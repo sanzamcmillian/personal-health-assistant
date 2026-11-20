@@ -1,6 +1,8 @@
 import asyncio
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
+
 from pydantic import BaseModel, Field
+
 from app.core.config import settings
 from app.core.constants import (
     BiologicalSex,
@@ -15,7 +17,7 @@ class ChatMessage(BaseModel):
     role: MessageRole
     content: str = Field(..., max_length=4000)
     triage_level: TriageLevel | None = None
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class EphemeralPatientProfile(BaseModel):
@@ -39,16 +41,17 @@ class EphemeralDocument(BaseModel):
     page_count: int = Field(..., ge=1, le=10)
     total_characters: int = Field(default=0)
     text_by_page: dict[int, str] = Field(default_factory=dict)
-    uploaded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    uploaded_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class EphemeralSession(BaseModel):
     session_id: str
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    last_activity: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    last_activity: datetime = Field(default_factory=lambda: datetime.now(UTC))
     expires_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc)
-        + timedelta(minutes=settings.SESSION_TTL_MINUTES)
+        default_factory=lambda: (
+            datetime.now(UTC) + timedelta(minutes=settings.SESSION_TTL_MINUTES)
+        )
     )
     terminated: bool = False
     highest_triage_level: TriageLevel = TriageLevel.GREEN
@@ -61,6 +64,6 @@ class EphemeralSession(BaseModel):
         arbitrary_types_allowed = True
 
     def refresh_ttl(self) -> None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         self.last_activity = now
         self.expires_at = now + timedelta(minutes=settings.SESSION_TTL_MINUTES)

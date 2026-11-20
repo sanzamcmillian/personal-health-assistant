@@ -1,4 +1,7 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Cookie, File, HTTPException, Request, UploadFile, status
+
 from app.core.config import settings
 from app.core.rate_limit import rate_limiter
 from app.schemas.document import DocumentDeleteResponse, DocumentUploadResponse
@@ -11,7 +14,7 @@ router = APIRouter(prefix="/documents", tags=["Documents"])
 @router.post("/upload", response_model=DocumentUploadResponse)
 async def upload_document(
     request: Request,
-    file: UploadFile = File(...),
+    file: Annotated[UploadFile, File(...)],
     session_token: str | None = Cookie(default=None, alias=settings.COOKIE_NAME),
 ) -> DocumentUploadResponse:
     rate_limiter.check(request)
@@ -52,11 +55,16 @@ async def delete_document(
 
     async with session.lock:
         initial_len = len(session.documents)
-        session.documents = [d for d in session.documents if d.document_id != document_id]
+        session.documents = [
+            d for d in session.documents if d.document_id != document_id
+        ]
         if len(session.documents) == initial_len:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail={"code": "DOCUMENT_NOT_FOUND", "detail": f"Document '{document_id}' not found in active session."},
+                detail={
+                    "code": "DOCUMENT_NOT_FOUND",
+                    "detail": f"Document '{document_id}' not found in active session.",
+                },
             )
 
     return DocumentDeleteResponse(

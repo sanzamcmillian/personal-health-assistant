@@ -1,7 +1,11 @@
 import json
+
+import httpx
 from google import genai
-from google.genai import types
+from google.genai import errors, types
+
 from app.core.config import settings
+from app.core.logging import logger
 from app.prompts.triage_prompt import GEMINI_RESPONSE_SCHEMA, TRIAGE_SYSTEM_PROMPT
 
 
@@ -30,7 +34,15 @@ class GeminiService:
 
             text = response.text or "{}"
             return json.loads(text)
-        except Exception:
+        except (
+            errors.APIError,
+            httpx.HTTPError,
+            json.JSONDecodeError,
+            ValueError,
+        ) as exc:
+            logger.warning(
+                "Gemini triage generation failed, returning fallback: %s", exc
+            )
             # Safe structured fallback on 429, timeout, network error, or safety block
             return {
                 "triage_level": "YELLOW",

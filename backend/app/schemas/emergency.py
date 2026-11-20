@@ -15,7 +15,9 @@ class EmergencyFacilityQuery(BaseModel):
         if has_lat != has_lon:
             raise ValueError("Both latitude and longitude must be provided together.")
         if not has_lat and not self.city and not self.postal_code:
-            raise ValueError("Either coordinates (latitude, longitude) or location (city/postal_code) must be provided.")
+            raise ValueError(
+                "Either coordinates (latitude, longitude) or location (city/postal_code) must be provided."
+            )
         return self
 
 

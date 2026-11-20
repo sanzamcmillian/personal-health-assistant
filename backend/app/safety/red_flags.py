@@ -1,6 +1,7 @@
 import re
 from typing import NamedTuple
-from app.core.constants import TriageDisposition, TriageLevel
+
+from app.core.constants import TriageDisposition
 
 
 class RedFlagResult(NamedTuple):

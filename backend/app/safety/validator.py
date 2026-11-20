@@ -1,5 +1,6 @@
 import re
 from typing import Any
+
 from app.core.constants import TriageDisposition, TriageLevel
 from app.models.session import EphemeralDocument
 
@@ -48,7 +49,9 @@ class PostLLMValidator:
             final_level = baseline_floor
             # If floor was RED, elevate disposition as well
             if final_level == TriageLevel.RED:
-                output["disposition"] = TriageDisposition.EMERGENCY_ROOM_IMMEDIATELY.value
+                output["disposition"] = (
+                    TriageDisposition.EMERGENCY_ROOM_IMMEDIATELY.value
+                )
         else:
             final_level = llm_level
 
@@ -69,7 +72,11 @@ class PostLLMValidator:
         output["reasoning_summary"] = summary
 
         # 3. Server-Side Literal Citation Verification
-        if documents and "citations" in output and isinstance(output["citations"], list):
+        if (
+            documents
+            and "citations" in output
+            and isinstance(output["citations"], list)
+        ):
             doc_map = {doc.filename: doc for doc in documents}
             verified_citations = []
 
@@ -81,10 +88,9 @@ class PostLLMValidator:
 
                     # Find doc by exact or sanitized filename
                     target_doc = doc_map.get(fname)
-                    if not target_doc and fname:
+                    if not target_doc and fname and len(documents) == 1:
                         # Fallback match if user uploaded single file
-                        if len(documents) == 1:
-                            target_doc = documents[0]
+                        target_doc = documents[0]
 
                     if target_doc and page in target_doc.text_by_page:
                         page_text = target_doc.text_by_page[page]

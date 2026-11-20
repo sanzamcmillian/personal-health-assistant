@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Cookie, HTTPException, Request, Response, status
+
 from app.core.config import settings
 from app.core.rate_limit import rate_limiter
 from app.schemas.chat import ChatRequest, TriageResponse
@@ -23,14 +24,20 @@ async def chat(
     if session.lock.locked():
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail={"code": "REQUEST_ALREADY_IN_FLIGHT", "detail": "A prior message is still being analyzed."},
+            detail={
+                "code": "REQUEST_ALREADY_IN_FLIGHT",
+                "detail": "A prior message is still being analyzed.",
+            },
         )
 
     async with session.lock:
         if session.terminated:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail={"code": "SESSION_TERMINATED", "detail": "Session was terminated."},
+                detail={
+                    "code": "SESSION_TERMINATED",
+                    "detail": "Session was terminated.",
+                },
             )
 
         triage_result = await triage_service.process_message(payload.message, session)

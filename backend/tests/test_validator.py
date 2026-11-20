@@ -1,4 +1,3 @@
-import pytest
 from app.core.constants import TriageDisposition, TriageLevel
 from app.models.session import EphemeralDocument
 from app.safety.validator import PostLLMValidator
@@ -13,7 +12,9 @@ def test_escalation_floor_prevents_downgrade():
     }
     validated = PostLLMValidator.validate(raw_output, baseline_floor=TriageLevel.RED)
     assert validated["triage_level"] == "RED"
-    assert validated["disposition"] == TriageDisposition.EMERGENCY_ROOM_IMMEDIATELY.value
+    assert (
+        validated["disposition"] == TriageDisposition.EMERGENCY_ROOM_IMMEDIATELY.value
+    )
 
 
 def test_escalation_floor_allows_upgrade():
@@ -34,7 +35,10 @@ def test_medication_guardrail_strips_stop_taking():
     }
     validated = PostLLMValidator.validate(raw_output)
     assert "stop taking" not in validated["reasoning_summary"].lower()
-    assert "discuss your lisinopril regimen with your prescribing doctor" in validated["reasoning_summary"].lower()
+    assert (
+        "discuss your lisinopril regimen with your prescribing doctor"
+        in validated["reasoning_summary"].lower()
+    )
 
 
 def test_medication_guardrail_strips_dosing():
@@ -44,7 +48,10 @@ def test_medication_guardrail_strips_dosing():
     }
     validated = PostLLMValidator.validate(raw_output)
     assert "500mg" not in validated["reasoning_summary"]
-    assert "[dosage should be confirmed with your doctor]" in validated["reasoning_summary"]
+    assert (
+        "[dosage should be confirmed with your doctor]"
+        in validated["reasoning_summary"]
+    )
 
 
 def test_citation_verification_drops_invalid_snippets():

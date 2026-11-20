@@ -20,7 +20,7 @@ google-genai
 # ==========================
 # PDF Processing (In-Memory)
 # ==========================
-PyMuPDF
+#PyMuPDF
 
 # ==========================
 # HTTP Client (OpenStreetMap)
