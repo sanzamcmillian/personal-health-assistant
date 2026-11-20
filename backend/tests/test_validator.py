@@ -27,6 +27,7 @@ def test_escalation_floor_allows_upgrade():
     validated = PostLLMValidator.validate(raw_output, baseline_floor=TriageLevel.GREEN)
     assert validated["triage_level"] == "YELLOW"
 
+
 """
 def test_medication_guardrail_strips_stop_taking():
     raw_output = {
@@ -40,6 +41,7 @@ def test_medication_guardrail_strips_stop_taking():
         in validated["reasoning_summary"].lower()
     )
 """
+
 
 def test_medication_guardrail_strips_dosing():
     raw_output = {
