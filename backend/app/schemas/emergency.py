@@ -36,5 +36,7 @@ class FacilityItem(BaseModel):
 class EmergencyFacilitiesResponse(BaseModel):
     emergency_numbers: list[str]
     facilities: list[FacilityItem] = Field(default_factory=list)
-    caveat: str = "Always call ahead to confirm emergency capability and current wait times, or call emergency services directly if experiencing life-threatening symptoms."
+    caveat: str = (
+        "Always call ahead to confirm emergency capability and current wait times, or call emergency services directly if experiencing life-threatening symptoms."
+    )
     cached: bool = False
